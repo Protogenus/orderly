@@ -10,7 +10,7 @@ Data lives in `%APPDATA%\Orderly\`. Back up from Settings > Backup.
 
 ## For the developer
 
-Prerequisites: Node.js 20+, npm. (Windows packaging is done on Linux via electron-builder.)
+Prerequisites: Node.js 22+, npm. (Windows packaging is done on Linux via electron-builder.)
 
 ```bash
 cd ~/workspace/orderly

@@ -20,7 +20,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # better-sqlite3 v13 requires Node >= 22 (engines field); its
+          # win32-x64 prebuild segfaults (0xC0000005) under Node 20.
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
