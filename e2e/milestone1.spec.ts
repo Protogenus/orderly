@@ -1,4 +1,5 @@
-import { test, expect, _electron as electron } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { launchApp } from './helpers';
 import { mkdtempSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -20,10 +21,7 @@ test.afterEach(async () => {
 });
 
 test('M1: app boots, all nav sections render, settings persist', async () => {
-  const app = await electron.launch({
-    args: [join(__dirname, '..', 'out', 'main', 'index.js')],
-    env: { ...process.env, ORDERLY_DATA_DIR: dir, NODE_ENV: 'production' },
-  });
+  const app = await launchApp(dir);
   const window = await app.firstWindow();
   await window.waitForLoadState('domcontentloaded');
 

@@ -1,9 +1,10 @@
-import { app, BrowserWindow, Menu, dialog, shell } from 'electron';
+import { app, BrowserWindow, Menu, dialog, shell, protocol } from 'electron';
 import { join } from 'path';
 import { copyFileSync, existsSync } from 'fs';
 import { openDatabase, closeDatabase, getDb, getDbPath, dataDir } from '../database/index.js';
 import { registerIpc } from './ipc.js';
 import { getSetting, setSetting } from '../database/settings.js';
+import { resolveImagePath } from './images.js';
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
@@ -151,6 +152,17 @@ app.whenReady().then(() => {
   }
   openDatabase();
   registerIpc();
+  // Serve product images from the data dir; nothing else on disk is reachable.
+  protocol.registerFileProtocol('orderly-img', (request, respond) => {
+    try {
+      const rel = decodeURIComponent(request.url.replace(/^orderly-img:\/\//, ''));
+      const full = resolveImagePath(rel);
+      if (!full) return respond({ error: -6 });
+      respond({ path: full });
+    } catch {
+      respond({ error: -6 });
+    }
+  });
   buildMenu();
   createWindow();
 

@@ -324,3 +324,119 @@ export interface BackupResult {
   path: string;
   size_bytes: number;
 }
+
+export interface InboxBuckets {
+  unreviewed: (Order & { item_count: number })[];
+  needs_attention: (Order & { item_count: number })[];
+  missing_info: (Order & { item_count: number })[];
+  payment_issues: (Order & { item_count: number })[];
+  approaching_due: (Order & { item_count: number })[];
+}
+
+// ---------- inputs ----------
+
+export interface NewCustomerInput {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  notes?: string | null;
+  tags?: string[];
+}
+export type UpdateCustomerInput = Partial<NewCustomerInput>;
+
+export interface NewAddressInput {
+  kind: 'billing' | 'shipping';
+  label?: string | null;
+  recipient?: string | null;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string;
+}
+
+export interface NewProductInput {
+  name: string;
+  sku?: string | null;
+  description?: string | null;
+  category_id?: string | null;
+  base_price_cents: number;
+  active?: boolean;
+  marketplace_id?: string | null;
+}
+export type UpdateProductInput = Partial<NewProductInput>;
+
+export interface NewVariantInput {
+  name: string;
+  sku?: string | null;
+  price_cents?: number | null;
+  attributes?: Record<string, string>;
+  active?: boolean;
+}
+export type UpdateVariantInput = Partial<NewVariantInput>;
+
+export interface NewOrderItemInput {
+  product_id?: string | null;
+  variant_id?: string | null;
+  description: string;
+  sku?: string | null;
+  quantity: number;
+  unit_price_cents: number;
+  discount_cents?: number;
+  tax_cents?: number;
+  requires_production?: boolean;
+}
+
+export interface NewOrderInput {
+  customer_id?: string | null;
+  order_date: string;
+  source?: string;
+  priority?: OrderPriority;
+  requested_date?: string | null;
+  internal_notes?: string | null;
+  customer_notes?: string | null;
+  tags?: string[];
+  discount_cents?: number;
+  shipping_cents?: number;
+  tax_cents?: number;
+  ship_recipient?: string | null;
+  ship_line1?: string | null;
+  ship_line2?: string | null;
+  ship_city?: string | null;
+  ship_state?: string | null;
+  ship_postal?: string | null;
+  ship_country?: string | null;
+  ship_method?: string | null;
+  items: NewOrderItemInput[];
+}
+export interface UpdateOrderInput extends Partial<Omit<NewOrderInput, 'items'>> {
+  items?: NewOrderItemInput[];
+}
+
+export interface OrderFilters {
+  search?: string;
+  statuses?: OrderStatus[];
+  customer_id?: string;
+  source?: string;
+  overdue?: boolean;
+  include_archived?: boolean;
+  limit?: number;
+  offset?: number;
+  sort?: 'order_date' | 'order_number' | 'grand_total_cents' | 'requested_date' | 'updated_at';
+  dir?: 'asc' | 'desc';
+}
+
+export interface NewNoteInput {
+  kind: 'internal' | 'customer';
+  body: string;
+}
+
+export interface NewPaymentInput {
+  amount_cents: number;
+  method?: string | null;
+  reference?: string | null;
+  paid_at: string;
+  note?: string | null;
+}

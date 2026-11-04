@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ToastProvider, useToast, errMsg } from './components/Toast';
 import { setSetting } from './api';
-import {
-  OverviewPage,
-  OrdersPage,
-  InboxPage,
-  CustomersPage,
-  ProductsPage,
-  FulfillmentPage,
-  ProductionPage,
-  ReturnsPage,
-  ReportsPage,
-  IntegrationsPage,
-} from './pages/placeholders';
+import { OverviewPage, FulfillmentPage, ProductionPage, ReturnsPage, ReportsPage, IntegrationsPage } from './pages/placeholders';
+import { OrdersPage } from './pages/Orders';
+import { InboxPage } from './pages/Inbox';
+import { CustomersPage } from './pages/Customers';
+import { ProductsPage } from './pages/Products';
 import { SettingsPage } from './pages/Settings';
 import './design-tokens.css';
 
@@ -63,6 +56,12 @@ function Shell() {
   const { notifyError } = useToast();
   const [page, setPage] = useState<PageId>('overview');
   const [ready, setReady] = useState(false);
+  const [orderDeepLink, setOrderDeepLink] = useState<string | null>(null);
+
+  function openOrder(id: string) {
+    setOrderDeepLink(id);
+    setPage('orders');
+  }
 
   useEffect(() => {
     // Restore last page; keyboard shortcut: Alt+1..9,0,= jumps to nav items.
@@ -133,8 +132,8 @@ function Shell() {
       </nav>
       <main className="workspace">
         {page === 'overview' && <OverviewPage />}
-        {page === 'orders' && <OrdersPage />}
-        {page === 'inbox' && <InboxPage />}
+        {page === 'orders' && <OrdersPage openRequest={orderDeepLink} onOpenConsumed={() => setOrderDeepLink(null)} />}
+        {page === 'inbox' && <InboxPage onOpenOrder={openOrder} />}
         {page === 'customers' && <CustomersPage />}
         {page === 'products' && <ProductsPage />}
         {page === 'fulfillment' && <FulfillmentPage />}
