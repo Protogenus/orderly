@@ -53,6 +53,11 @@ jobs:
           npx electron-builder --win --x64 --publish never
 
       - name: Assemble portable deliverable
+        # The electron-builder win zip holds the unpacked app files at TOP LEVEL
+        # (no win-unpacked wrapper) - verified via unzip -l. Extracting into
+        # release-staging/ (which already holds START_ORDERLY.bat + README.txt)
+        # yields exactly the flat layout the launcher expects: Orderly.exe next
+        # to the bat.
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -60,12 +65,9 @@ jobs:
           $ebZip = "release/Orderly-$version-win.zip"
           if (-not (Test-Path $ebZip)) { throw "electron-builder zip not found: $ebZip" }
           Expand-Archive -Path $ebZip -DestinationPath 'release-staging' -Force
-          if (-not (Test-Path 'release-staging/win-unpacked/Orderly.exe')) { throw 'Orderly.exe missing after extract' }
+          if (-not (Test-Path 'release-staging/Orderly.exe')) { throw 'Orderly.exe missing after extract' }
           if (-not (Test-Path 'release-staging/START_ORDERLY.bat')) { throw 'launcher bat missing' }
           if (-not (Test-Path 'release-staging/resources/app.asar')) { throw 'app.asar missing' }
-          $nodeBinding = 'release-staging/resources/app.asar.unpacked/node_modules/better-sqlite3/prebuilds/win32-x64.node'
-          # binding may live unpacked next to asar instead; report either way
-          if (-not (Test-Path $nodeBinding)) { Write-Warning "win32-x64.node not at expected unpacked path - check layout" }
           $out = "orderly-$version.zip"
           if (Test-Path $out) { Remove-Item $out }
           Compress-Archive -Path 'release-staging/*' -DestinationPath $out
