@@ -287,7 +287,6 @@ const ALLOWED_SETTINGS = new Set([
   'company_name',
   'order_number_prefix',
   'default_currency',
-  'sample_data_enabled',
   'last_page',
   'stagepoint_inbox_dir',
 ]);
@@ -304,11 +303,7 @@ export function registerIpc(): void {
   handle(IPC.settingsSet, (key: unknown, value: unknown) => {
     const k = reqString(key, 'setting key', 64);
     if (!ALLOWED_SETTINGS.has(k)) throw new AppError('VALIDATION', `Unknown setting: ${k}.`);
-    if (k === 'sample_data_enabled') {
-      const v = optString(value, 'value', 8);
-      if (v !== '0' && v !== '1') throw new AppError('VALIDATION', 'sample_data_enabled must be 0 or 1.');
-      setSetting(k, v ?? '0');
-    } else if (k === 'default_currency') {
+    if (k === 'default_currency') {
       setSetting(k, reqString(value, 'value', 8).toUpperCase());
     } else {
       setSetting(k, optString(value, 'value', 200) ?? '');

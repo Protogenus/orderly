@@ -50,7 +50,7 @@ describe('migrations', () => {
     expect(getSetting('order_number_prefix')).toBe('ORD-');
     expect(getSetting('order_number_next')).toBe('1001');
     expect(getSetting('default_currency')).toBe('USD');
-    expect(getSetting('sample_data_enabled')).toBe('0');
+    expect(getSetting('sample_data_enabled')).toBeNull(); // removed by migration 005
   });
 });
 

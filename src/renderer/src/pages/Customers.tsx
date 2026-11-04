@@ -143,6 +143,7 @@ export function CustomersPage() {
   const [editing, setEditing] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDeleteAddress, setConfirmDeleteAddress] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -340,10 +341,7 @@ export function CustomersPage() {
                         <div key={a.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 8, fontSize: 12, maxWidth: 240 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                             <strong>{a.label || (a.kind === 'billing' ? 'Billing' : 'Shipping')}</strong>
-                            <button className="btn btn-sm" style={{ padding: '1px 6px' }} onClick={async () => {
-                              try { await window.orderly.deleteAddress(a.id); setAddresses(await window.orderly.listAddresses(profile.id)); }
-                              catch (e) { notifyError(errMsg(e)); }
-                            }}>Remove</button>
+                            <button className="btn btn-sm" style={{ padding: '1px 6px' }} onClick={() => setConfirmDeleteAddress(a.id)}>Remove</button>
                           </div>
                           <div style={{ color: 'var(--muted)', marginTop: 4 }}>
                             {a.recipient && <div>{a.recipient}</div>}
@@ -411,6 +409,22 @@ export function CustomersPage() {
         <Modal title="Add address" onClose={() => setShowAddress(false)}>
           <AddressForm onSave={saveAddress} onCancel={() => setShowAddress(false)} />
         </Modal>
+      )}
+      {confirmDeleteAddress && profile && (
+        <ConfirmDialog
+          title="Remove address"
+          body="Remove this address? It will be permanently deleted from the customer's record."
+          confirmLabel="Remove address"
+          danger
+          onConfirm={async () => {
+            try {
+              await window.orderly.deleteAddress(confirmDeleteAddress);
+              setAddresses(await window.orderly.listAddresses(profile.id));
+            } catch (e) { notifyError(errMsg(e)); }
+            setConfirmDeleteAddress(null);
+          }}
+          onCancel={() => setConfirmDeleteAddress(null)}
+        />
       )}
       {confirmDelete && profile && (
         <ConfirmDialog

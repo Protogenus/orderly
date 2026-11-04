@@ -146,6 +146,7 @@ export function ProductsPage() {
   const [showCategory, setShowCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDeleteVariant, setConfirmDeleteVariant] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -364,10 +365,7 @@ export function ProductsPage() {
                         <strong>{v.name}</strong>
                         <span>
                           <button className="btn btn-sm" style={{ padding: '1px 6px', marginRight: 4 }} onClick={() => { setEditingVariant(v); setShowVariant(true); }}>Edit</button>
-                          <button className="btn btn-sm" style={{ padding: '1px 6px' }} onClick={async () => {
-                            try { await window.orderly.deleteVariant(v.id); const d = await window.orderly.getProduct(detail.id); setDetail(d); }
-                            catch (e) { notifyError(errMsg(e)); }
-                          }}>Delete</button>
+                          <button className="btn btn-sm" style={{ padding: '1px 6px' }} onClick={() => setConfirmDeleteVariant(v.id)}>Delete</button>
                         </span>
                       </div>
                       <div style={{ color: 'var(--muted)', marginTop: 2 }}>
@@ -423,6 +421,23 @@ export function ProductsPage() {
             </ul>
           )}
         </Modal>
+      )}
+      {confirmDeleteVariant && detail && (
+        <ConfirmDialog
+          title="Delete variant"
+          body="Delete this variant? It will be permanently removed from the product."
+          confirmLabel="Delete variant"
+          danger
+          onConfirm={async () => {
+            try {
+              await window.orderly.deleteVariant(confirmDeleteVariant);
+              const d = await window.orderly.getProduct(detail.id);
+              setDetail(d);
+            } catch (e) { notifyError(errMsg(e)); }
+            setConfirmDeleteVariant(null);
+          }}
+          onCancel={() => setConfirmDeleteVariant(null)}
+        />
       )}
       {confirmDelete && detail && (
         <ConfirmDialog

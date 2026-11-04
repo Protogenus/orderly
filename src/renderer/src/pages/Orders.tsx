@@ -411,8 +411,15 @@ export function OrdersPage({ openRequest, onOpenConsumed }: { openRequest?: stri
   }
 
   const th = (label: string, col: NonNullable<OrderFilters['sort']>, alignRight = false) => (
-    <th onClick={() => toggleSort(col)} style={alignRight ? { textAlign: 'right' } : undefined}>
-      {label}{sort === col ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}
+    <th style={alignRight ? { textAlign: 'right' } : undefined}>
+      <button
+        className="linklike"
+        onClick={() => toggleSort(col)}
+        aria-label={`Sort by ${label}`}
+        style={{ color: 'inherit', fontWeight: 600, fontSize: 'inherit' }}
+      >
+        {label}{sort === col ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}
+      </button>
     </th>
   );
 

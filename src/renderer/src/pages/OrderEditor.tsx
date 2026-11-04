@@ -289,7 +289,10 @@ export function OrderEditor({
                         <div style={{ border: '1px solid var(--border)', borderRadius: 8, marginTop: 4, maxHeight: 180, overflowY: 'auto', background: 'var(--surface)' }}>
                           <TextInput value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Search products…" autoFocus aria-label="Search products" style={{ border: 0, borderBottom: '1px solid var(--border)', borderRadius: 0 }} />
                           {products.map((p) => (
-                            <div key={p.id} onClick={() => pickProduct(l.key, p.id)} style={{ padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}
+                            <div key={p.id} role="option" aria-selected="false" tabIndex={0}
+                              onClick={() => pickProduct(l.key, p.id)}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickProduct(l.key, p.id); } }}
+                              style={{ padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}
                               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
                               onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                               <strong>{p.name}</strong> <span style={{ color: 'var(--muted)' }}>{formatCents(p.base_price_cents)}</span>
