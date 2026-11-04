@@ -15,9 +15,6 @@ export function CustomersPage() {
 export function ProductsPage() {
   return <ComingSoon title="Products" milestone="Milestone 2 (product catalog)" />;
 }
-export function FulfillmentPage() {
-  return <ComingSoon title="Fulfillment" milestone="Milestone 3 (packing & shipping)" />;
-}
 export function ProductionPage() {
   return <ComingSoon title="Production" milestone="Milestone 4 (StagePoint handoff)" />;
 }

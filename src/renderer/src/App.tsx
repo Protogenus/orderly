@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ToastProvider, useToast, errMsg } from './components/Toast';
 import { setSetting } from './api';
-import { OverviewPage, FulfillmentPage, ProductionPage, ReturnsPage, ReportsPage, IntegrationsPage } from './pages/placeholders';
+import { OverviewPage, ProductionPage, ReturnsPage, ReportsPage, IntegrationsPage } from './pages/placeholders';
+import { FulfillmentPage } from './pages/Fulfillment';
 import { OrdersPage } from './pages/Orders';
 import { InboxPage } from './pages/Inbox';
 import { CustomersPage } from './pages/Customers';

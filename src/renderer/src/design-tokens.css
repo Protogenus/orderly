@@ -285,3 +285,9 @@ table.data tr.row-selected { background: var(--sky-soft); }
   .sidebar, .no-print { display: none !important; }
   .workspace { border: 0; box-shadow: none; }
 }
+
+.print-area { display: none; }
+@media print {
+  body > *:not(.print-area) { display: none !important; }
+  .print-area { display: block !important; }
+}

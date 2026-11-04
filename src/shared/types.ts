@@ -440,3 +440,50 @@ export interface NewPaymentInput {
   paid_at: string;
   note?: string | null;
 }
+
+export interface PackItemInput {
+  order_item_id: string;
+  quantity: number;
+}
+
+export interface ReadyToShipInput {
+  package_notes?: string | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+}
+
+export interface ShipInput {
+  carrier?: string | null;
+  service?: string | null;
+  tracking_number?: string | null;
+  shipped_at: string;
+  shipping_cost_cents: number;
+  package_summary?: string | null;
+}
+
+export interface FulfillmentItemDetail extends FulfillmentItem {
+  description: string;
+  sku: string | null;
+  quantity_ordered: number;
+}
+
+export interface FulfillmentDetail extends Fulfillment {
+  order_number: string;
+  customer_name: string | null;
+  items: FulfillmentItemDetail[];
+}
+
+export interface WorkspaceBucket {
+  orders: (Order & { item_count: number; packed_count: number })[];
+  fulfillments: FulfillmentDetail[];
+}
+
+export interface WorkspaceData {
+  ready_to_pack: (Order & { item_count: number; packed_count: number })[];
+  packing: (Order & { item_count: number; packed_count: number })[];
+  ready_to_ship: FulfillmentDetail[];
+  shipped: FulfillmentDetail[];
+  awaiting_delivery: FulfillmentDetail[];
+}

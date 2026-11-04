@@ -53,7 +53,9 @@ export const IPC = {
   fulfillmentsStart: 'fulfillments:start',
   fulfillmentsPackItem: 'fulfillments:pack-item',
   fulfillmentsReadyToShip: 'fulfillments:ready-to-ship',
+  fulfillmentsBackToPacking: 'fulfillments:back-to-packing',
   fulfillmentsShip: 'fulfillments:ship',
+  fulfillmentsDelete: 'fulfillments:delete',
   fulfillmentsWorkspace: 'fulfillments:workspace',
 
   // Milestone 4+

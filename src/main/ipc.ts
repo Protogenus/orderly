@@ -8,6 +8,7 @@ import type {
   CustomerAddress,
   CustomerProfile,
   Fulfillment,
+  FulfillmentDetail,
   ImportError,
   ImportJob,
   NewAddressInput,
@@ -24,12 +25,15 @@ import type {
   OrderNote,
   OrderStatus,
   OrderStatusEvent,
+  PackItemInput,
   Payment,
   ProductionHandoff,
   Product,
   ProductCategory,
   ProductVariant,
+  ReadyToShipInput,
   ReturnRecord,
+  ShipInput,
   UpdateCustomerInput,
   UpdateOrderInput,
   UpdateProductInput,
@@ -58,6 +62,7 @@ import { ORDER_SOURCES, ORDER_TRANSITIONS } from '../shared/constants.js';
 import * as customers from '../database/customers.js';
 import * as products from '../database/products.js';
 import * as orders from '../database/orders.js';
+import * as fulfillment from '../database/fulfillment.js';
 import { saveProductImage } from './images.js';
 
 function ok<T>(data: T) {
@@ -448,4 +453,57 @@ export function registerIpc(): void {
   });
   handle<Payment[]>(IPC.ordersListPayments, (id: unknown) => orders.listPayments(reqId(id)));
   handle(IPC.ordersInbox, () => orders.inboxBuckets());
+
+  // ----- fulfillment -----
+  handle(IPC.fulfillmentsWorkspace, () => fulfillment.getWorkspace());
+  handle<FulfillmentDetail[]>(IPC.fulfillmentsForOrder, (orderId: unknown) =>
+    fulfillment.getFulfillmentsForOrder(reqId(orderId, 'order')),
+  );
+  handle<FulfillmentDetail>(IPC.fulfillmentsStart, (orderId: unknown) =>
+    fulfillment.startPacking(reqId(orderId, 'order')),
+  );
+  handle<FulfillmentDetail>(IPC.fulfillmentsPackItem, (fulfillmentId: unknown, input: unknown) => {
+    const o = (input ?? {}) as Record<string, unknown>;
+    const pack: PackItemInput = {
+      order_item_id: reqId(o.order_item_id, 'order item'),
+      quantity: reqInt(o.quantity, 'quantity', 0, 1000000),
+    };
+    return fulfillment.setPackedQuantity(reqId(fulfillmentId), pack);
+  });
+  handle<FulfillmentDetail>(IPC.fulfillmentsReadyToShip, (fulfillmentId: unknown, input: unknown) => {
+    const o = (input ?? {}) as Record<string, unknown>;
+    const num = (v: unknown, field: string): number | null => {
+      if (v === undefined || v === null || v === '') return null;
+      const n = typeof v === 'number' ? v : parseFloat(String(v));
+      if (!Number.isFinite(n) || n < 0 || n > 1000000) throw new AppError('VALIDATION', `${field} must be a positive number.`);
+      return Math.round(n * 100) / 100;
+    };
+    const rts: ReadyToShipInput = {
+      package_notes: optString(o.package_notes, 'package notes', 2000),
+      length_cm: num(o.length_cm, 'length'),
+      width_cm: num(o.width_cm, 'width'),
+      height_cm: num(o.height_cm, 'height'),
+      weight_kg: num(o.weight_kg, 'weight'),
+    };
+    return fulfillment.markReadyToShip(reqId(fulfillmentId), rts);
+  });
+  handle<FulfillmentDetail>(IPC.fulfillmentsBackToPacking, (fulfillmentId: unknown) =>
+    fulfillment.backToPacking(reqId(fulfillmentId)),
+  );
+  handle<FulfillmentDetail>(IPC.fulfillmentsShip, (fulfillmentId: unknown, input: unknown) => {
+    const o = (input ?? {}) as Record<string, unknown>;
+    const ship: ShipInput = {
+      carrier: optString(o.carrier, 'carrier', 80),
+      service: optString(o.service, 'service', 80),
+      tracking_number: optString(o.tracking_number, 'tracking number', 80),
+      shipped_at: o.shipped_at === undefined ? new Date().toISOString().slice(0, 10) : reqDate(o.shipped_at, 'ship date'),
+      shipping_cost_cents: moneyToCents(o.shipping_cost_cents ?? 0, 'shipping cost'),
+      package_summary: optString(o.package_summary, 'package summary', 500),
+    };
+    return fulfillment.shipFulfillment(reqId(fulfillmentId), ship);
+  });
+  handle(IPC.fulfillmentsDelete, (fulfillmentId: unknown) => {
+    fulfillment.deleteFulfillment(reqId(fulfillmentId));
+    return null;
+  });
 }

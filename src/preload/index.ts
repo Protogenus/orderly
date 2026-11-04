@@ -6,6 +6,7 @@ import type {
   Customer,
   CustomerAddress,
   CustomerProfile,
+  FulfillmentDetail,
   InboxBuckets,
   NewAddressInput,
   NewCustomerInput,
@@ -19,14 +20,18 @@ import type {
   OrderNote,
   OrderStatus,
   OrderStatusEvent,
+  PackItemInput,
   Payment,
   Product,
   ProductCategory,
   ProductVariant,
+  ReadyToShipInput,
+  ShipInput,
   UpdateCustomerInput,
   UpdateOrderInput,
   UpdateProductInput,
   UpdateVariantInput,
+  WorkspaceData,
 } from '../shared/types.js';
 
 /** Unwrap the IPC envelope; surface main-process errors as thrown Errors. */
@@ -106,6 +111,21 @@ const api = {
     invoke<{ payment: Payment; order: Order }>(IPC.ordersAddPayment, id, input),
   listPayments: (id: string) => invoke<Payment[]>(IPC.ordersListPayments, id),
   getInbox: () => invoke<InboxBuckets>(IPC.ordersInbox),
+
+  // fulfillment
+  getWorkspace: () => invoke<WorkspaceData>(IPC.fulfillmentsWorkspace),
+  getFulfillmentsForOrder: (orderId: string) =>
+    invoke<FulfillmentDetail[]>(IPC.fulfillmentsForOrder, orderId),
+  startPacking: (orderId: string) => invoke<FulfillmentDetail>(IPC.fulfillmentsStart, orderId),
+  packItem: (fulfillmentId: string, input: PackItemInput) =>
+    invoke<FulfillmentDetail>(IPC.fulfillmentsPackItem, fulfillmentId, input),
+  markReadyToShip: (fulfillmentId: string, input: ReadyToShipInput) =>
+    invoke<FulfillmentDetail>(IPC.fulfillmentsReadyToShip, fulfillmentId, input),
+  backToPacking: (fulfillmentId: string) =>
+    invoke<FulfillmentDetail>(IPC.fulfillmentsBackToPacking, fulfillmentId),
+  shipFulfillment: (fulfillmentId: string, input: ShipInput) =>
+    invoke<FulfillmentDetail>(IPC.fulfillmentsShip, fulfillmentId, input),
+  deleteFulfillment: (fulfillmentId: string) => invoke<null>(IPC.fulfillmentsDelete, fulfillmentId),
 };
 
 export type OrderlyApi = typeof api;

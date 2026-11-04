@@ -40,17 +40,20 @@ function OrderDetail({ order, onChanged, onBack }: { order: Order; onChanged: (o
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelNote, setCancelNote] = useState('');
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [fulfillments, setFulfillments] = useState<import('../../../shared/types.js').FulfillmentDetail[]>([]);
 
   const load = useCallback(async () => {
     try {
-      const [h, n, p] = await Promise.all([
+      const [h, n, p, f] = await Promise.all([
         window.orderly.getStatusHistory(order.id),
         window.orderly.listNotes(order.id),
         window.orderly.listPayments(order.id),
+        window.orderly.getFulfillmentsForOrder(order.id),
       ]);
       setHistory(h);
       setNotes(n);
       setPayments(p);
+      setFulfillments(f);
     } catch (e) {
       notifyError(errMsg(e));
     }
@@ -269,6 +272,23 @@ function OrderDetail({ order, onChanged, onBack }: { order: Order; onChanged: (o
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          <div className="card">
+            <h3>Fulfillment ({fulfillments.length})</h3>
+            {fulfillments.length === 0 ? (
+              <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>Nothing packed yet. Use the Fulfillment workspace to pack and ship.</p>
+            ) : (
+              fulfillments.map((f) => (
+                <div key={f.id} style={{ fontSize: 12, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                  <StatusPill tone={f.status === 'shipped' ? 'sage' : f.status === 'ready_to_ship' ? 'sky' : 'amber'}>
+                    {f.status.replace(/_/g, ' ')}
+                  </StatusPill>{' '}
+                  {f.items.reduce((s, i) => s + i.quantity_packed, 0)} item(s) packed
+                  {f.shipment?.tracking_number && <span className="mono" style={{ color: 'var(--muted)' }}> · {f.shipment.tracking_number}</span>}
+                </div>
+              ))
             )}
           </div>
 
