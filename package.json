@@ -53,14 +53,8 @@
     ],
     "win": {
       "target": [
-        "nsis",
         "zip"
       ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Orderly"
     },
     "npmRebuild": false
   }
