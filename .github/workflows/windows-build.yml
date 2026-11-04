@@ -1,0 +1,72 @@
+name: Windows build
+
+# Builds the Windows deliverables on a real Windows runner:
+#  - portable zip (orderly-<version>.zip, extract + START_ORDERLY.bat)
+#  - NSIS installer (release/Orderly Setup <version>.exe)
+# Public repo = unlimited free Actions minutes, so every push to master is built.
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules for Electron
+        run: npm run rebuild
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Package for Windows (portable zip + NSIS installer)
+        # Repo config is zip-only (nsis needs Wine on Linux). On a real Windows
+        # runner both targets build fine, so enable nsis for this run only.
+        # The package.json patch is NOT committed.
+        run: |
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.build.win.target=['zip','nsis'];fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+          npm run dist
+
+      - name: Assemble portable deliverable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (node -p "require('./package.json').version")
+          $ebZip = "release/Orderly-$version-win.zip"
+          if (-not (Test-Path $ebZip)) { throw "electron-builder zip not found: $ebZip" }
+          Expand-Archive -Path $ebZip -DestinationPath 'release-staging' -Force
+          if (-not (Test-Path 'release-staging/win-unpacked/Orderly.exe')) { throw 'Orderly.exe missing after extract' }
+          if (-not (Test-Path 'release-staging/START_ORDERLY.bat')) { throw 'launcher bat missing' }
+          if (-not (Test-Path 'release-staging/resources/app.asar')) { throw 'app.asar missing' }
+          $nodeBinding = 'release-staging/resources/app.asar.unpacked/node_modules/better-sqlite3/prebuilds/win32-x64.node'
+          # binding may live unpacked next to asar instead; report either way
+          if (-not (Test-Path $nodeBinding)) { Write-Warning "win32-x64.node not at expected unpacked path - check layout" }
+          $out = "orderly-$version.zip"
+          if (Test-Path $out) { Remove-Item $out }
+          Compress-Archive -Path 'release-staging/*' -DestinationPath $out
+          Get-Item $out | Select-Object Name, @{n='MB'; e={[math]::Round($_.Length/1MB,1)}}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: orderly-windows
+          path: |
+            orderly-*.zip
+            release/*.exe
+          if-no-files-found: error
