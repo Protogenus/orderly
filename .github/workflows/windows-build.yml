@@ -45,9 +45,12 @@ jobs:
         # Repo config is zip-only (nsis needs Wine on Linux). On a real Windows
         # runner both targets build fine, so enable nsis for this run only.
         # The package.json patch is NOT committed.
+        # --publish never: electron-builder auto-publishes when it detects CI;
+        # artifacts are uploaded via upload-artifact instead (no release spam).
         run: |
           node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.build.win.target=['zip','nsis'];fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
-          npm run dist
+          npm run build
+          npx electron-builder --win --x64 --publish never
 
       - name: Assemble portable deliverable
         shell: pwsh
