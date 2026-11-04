@@ -65,7 +65,13 @@ import * as orders from '../database/orders.js';
 import * as fulfillment from '../database/fulfillment.js';
 import * as production from '../database/production.js';
 import * as returns from '../database/returns.js';
+import * as imports from '../database/imports.js';
+import * as dashboard from '../database/dashboard.js';
+import * as reports from '../database/reports.js';
+import * as exports from '../database/exports.js';
 import { saveProductImage } from './images.js';
+import { writeFileSync } from 'fs';
+import { basename } from 'path';
 
 function ok<T>(data: T) {
   return { ok: true, data };
@@ -595,4 +601,79 @@ export function registerIpc(): void {
       reqEnum(to, 'status', ['requested', 'approved', 'awaiting_return', 'received', 'inspected', 'resolved', 'rejected'] as const),
     ),
   );
+
+  // ----- dashboard -----
+  handle(IPC.dashboardStats, (from: unknown, to: unknown) => {
+    const f = optDate(from, 'from') ?? new Date().toISOString().slice(0, 10);
+    const t = optDate(to, 'to') ?? new Date().toISOString().slice(0, 10);
+    return dashboard.getDashboardStats({ from: f, to: t });
+  });
+
+  // ----- reports -----
+  handle(IPC.reportsList, () => reports.REPORT_LIST);
+  handle(IPC.reportsRun, (id: unknown, from: unknown, to: unknown) => {
+    const reportId = reqEnum<import('../shared/types.js').ReportId>(id, 'report', reports.REPORT_LIST.map((r) => r.id));
+    const f = optDate(from, 'from') ?? '2000-01-01';
+    const t = optDate(to, 'to') ?? '2100-01-01';
+    return reports.runReport(reportId, { from: f, to: t });
+  });
+  handle(IPC.reportsExportCsv, async (csvText: unknown, filename: unknown) => {
+    const text = reqString(csvText, 'csv', 50 * 1024 * 1024);
+    const name = reqString(filename, 'filename', 200).replace(/[^\w\-.]+/g, '_');
+    const win = BrowserWindow.getFocusedWindow();
+    const res = await dialog.showSaveDialog(win!, {
+      title: 'Export report to CSV',
+      defaultPath: name,
+      filters: [{ name: 'CSV files', extensions: ['csv'] }],
+    });
+    if (res.canceled || !res.filePath) throw new AppError('CANCELED', 'Export canceled.');
+    writeFileSync(res.filePath, text, 'utf-8');
+    return res.filePath;
+  });
+
+  // ----- CSV -----
+  handle(IPC.dialogPickCsv, async () => {
+    // Test seam: E2E sets ORDERLY_TEST_CSV to bypass the native dialog (which
+    // cannot be driven headless). Production behavior is unchanged.
+    if (process.env.ORDERLY_TEST_CSV) return process.env.ORDERLY_TEST_CSV;
+    const win = BrowserWindow.getFocusedWindow();
+    const res = await dialog.showOpenDialog(win!, {
+      title: 'Choose a CSV file',
+      filters: [{ name: 'CSV files', extensions: ['csv'] }],
+      properties: ['openFile'],
+    });
+    if (res.canceled || res.filePaths.length === 0) return null;
+    return res.filePaths[0];
+  });
+
+  handle(IPC.csvExport, async (kind: unknown) => {
+    const k = reqEnum(kind, 'kind', ['orders', 'customers', 'products'] as const);
+    const { filename, csv } = exports.buildExportCsv(k);
+    const win = BrowserWindow.getFocusedWindow();
+    const res = await dialog.showSaveDialog(win!, {
+      title: `Export ${k} to CSV`,
+      defaultPath: filename,
+      filters: [{ name: 'CSV files', extensions: ['csv'] }],
+    });
+    if (res.canceled || !res.filePath) throw new AppError('CANCELED', 'Export canceled.');
+    writeFileSync(res.filePath, csv, 'utf-8');
+    return res.filePath;
+  });
+
+  handle(IPC.csvImportAnalyze, (kind: unknown, filePath: unknown) => {
+    const k = reqEnum(kind, 'kind', ['customers', 'products', 'orders'] as const);
+    const p = reqString(filePath, 'file', 1024);
+    return imports.analyzeImport(k, p, basename(p));
+  });
+
+  handle(IPC.csvImportValidate, (jobId: unknown, mapping: unknown) => {
+    const m = ((mapping ?? {}) as Record<string, unknown>);
+    const clean: Record<string, string | null> = {};
+    for (const [key, value] of Object.entries(m)) {
+      clean[key] = typeof value === 'string' && value ? value : null;
+    }
+    return imports.validateImport(reqId(jobId, 'job'), clean);
+  });
+
+  handle(IPC.csvImportApply, (jobId: unknown) => imports.applyImport(reqId(jobId, 'job')));
 }

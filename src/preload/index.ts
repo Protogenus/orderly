@@ -6,7 +6,11 @@ import type {
   Customer,
   CustomerAddress,
   CustomerProfile,
+  DashboardStats,
   FulfillmentDetail,
+  ImportAnalysisDto,
+  ImportValidationDto,
+  ImportApplyDto,
   InboxBuckets,
   NewAddressInput,
   NewCustomerInput,
@@ -27,6 +31,8 @@ import type {
   ProductCategory,
   ProductVariant,
   ReadyToShipInput,
+  ReportId,
+  ReportResult,
   ReturnRecord,
   ReturnStatus,
   ShipInput,
@@ -154,6 +160,24 @@ const api = {
   updateReturn: (id: string, patch: { reason?: string | null; refund_status?: string | null; internal_notes?: string | null; replacement_order_id?: string | null }) =>
     invoke<ReturnRecord>(IPC.returnsUpdate, id, patch),
   setReturnStatus: (id: string, to: ReturnStatus) => invoke<ReturnRecord>(IPC.returnsSetStatus, id, to),
+
+  // dashboard + reports
+  getDashboardStats: (from: string, to: string) =>
+    invoke<DashboardStats>(IPC.dashboardStats, from, to),
+  listReports: () => invoke<{ id: ReportId; label: string }[]>(IPC.reportsList),
+  runReport: (id: ReportId, from: string, to: string) =>
+    invoke<ReportResult>(IPC.reportsRun, id, from, to),
+  exportReportCsv: (csvText: string, filename: string) =>
+    invoke<string>(IPC.reportsExportCsv, csvText, filename),
+
+  // CSV
+  pickCsvFile: () => invoke<string | null>(IPC.dialogPickCsv),
+  exportCsv: (kind: 'orders' | 'customers' | 'products') => invoke<string>(IPC.csvExport, kind),
+  importAnalyze: (kind: 'customers' | 'products' | 'orders', filePath: string) =>
+    invoke<ImportAnalysisDto>(IPC.csvImportAnalyze, kind, filePath),
+  importValidate: (jobId: string, mapping: Record<string, string | null>) =>
+    invoke<ImportValidationDto>(IPC.csvImportValidate, jobId, mapping),
+  importApply: (jobId: string) => invoke<ImportApplyDto>(IPC.csvImportApply, jobId),
 };
 
 export type OrderlyApi = typeof api;

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ToastProvider, useToast, errMsg } from './components/Toast';
 import { setSetting } from './api';
-import { OverviewPage, ReportsPage, IntegrationsPage } from './pages/placeholders';
+import { OverviewPage } from './pages/Overview';
+import { ReportsPage } from './pages/Reports';
+import { IntegrationsPage } from './pages/Integrations';
 import { FulfillmentPage } from './pages/Fulfillment';
 import { ProductionPage } from './pages/Production';
 import { ReturnsPage } from './pages/Returns';
@@ -12,7 +14,7 @@ import { ProductsPage } from './pages/Products';
 import { SettingsPage } from './pages/Settings';
 import './design-tokens.css';
 
-type PageId =
+export type PageId =
   | 'overview' | 'orders' | 'inbox' | 'customers' | 'products'
   | 'fulfillment' | 'production' | 'returns' | 'reports' | 'integrations' | 'settings';
 
@@ -134,7 +136,7 @@ function Shell() {
         <div className="sidebar-foot">Every order, in order.</div>
       </nav>
       <main className="workspace">
-        {page === 'overview' && <OverviewPage />}
+        {page === 'overview' && <OverviewPage onGo={(p: PageId) => setPage(p)} />}
         {page === 'orders' && <OrdersPage openRequest={orderDeepLink} onOpenConsumed={() => setOrderDeepLink(null)} />}
         {page === 'inbox' && <InboxPage onOpenOrder={openOrder} />}
         {page === 'customers' && <CustomersPage />}
@@ -143,7 +145,7 @@ function Shell() {
         {page === 'production' && <ProductionPage />}
         {page === 'returns' && <ReturnsPage />}
         {page === 'reports' && <ReportsPage />}
-        {page === 'integrations' && <IntegrationsPage />}
+        {page === 'integrations' && <IntegrationsPage onGo={(p: PageId) => setPage(p)} />}
         {page === 'settings' && <SettingsPage />}
       </main>
     </div>

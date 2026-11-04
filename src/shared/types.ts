@@ -500,3 +500,47 @@ export interface StagepointDetection {
   outbox_dir: string;
   message: string;
 }
+
+export type ReportId =
+  | 'orders_over_time'
+  | 'sales_over_time'
+  | 'orders_by_status'
+  | 'orders_by_channel'
+  | 'best_sellers'
+  | 'average_order_value'
+  | 'customer_history'
+  | 'fulfillment_performance'
+  | 'late_orders'
+  | 'canceled_orders'
+  | 'returns';
+
+export interface ReportResult {
+  id: ReportId;
+  title: string;
+  note: string;
+  columns: string[];
+  rows: (string | number)[][];
+  csv: string;
+}
+
+export interface ImportAnalysisDto {
+  jobId: string;
+  kind: string;
+  columns: string[];
+  totalRows: number;
+  sampleRows: Record<string, string>[];
+  autoMapping: Record<string, string | null>;
+  fields: { key: string; label: string; required: boolean; hint?: string }[];
+}
+
+export interface ImportValidationDto {
+  validRows: number;
+  errors: { row: number; message: string }[];
+  duplicates: { row: number; reason: string }[];
+}
+
+export interface ImportApplyDto {
+  imported: number;
+  skipped: number;
+  errors: { row: number; message: string }[];
+}

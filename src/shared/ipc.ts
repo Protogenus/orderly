@@ -77,8 +77,12 @@ export const IPC = {
 
   // Milestone 5+
   dashboardStats: 'dashboard:stats',
+  reportsList: 'reports:list',
   reportsRun: 'reports:run',
+  reportsExportCsv: 'reports:export-csv',
   csvExport: 'csv:export',
+  dialogPickCsv: 'dialog:pick-csv',
   csvImportAnalyze: 'csv:import-analyze',
+  csvImportValidate: 'csv:import-validate',
   csvImportApply: 'csv:import-apply',
 } as const;
