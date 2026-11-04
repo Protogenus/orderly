@@ -26,14 +26,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Rebuild native modules for Electron
-        run: npm run rebuild
-
       - name: Typecheck
         run: npm run typecheck
 
       - name: Unit tests
+        # NOTE: tests run under plain Node, so they must use better-sqlite3's npm
+        # prebuild (Node ABI). `npm run rebuild` swaps the binding to Electron's
+        # ABI, which segfaults vitest workers (0xC0000005) on Windows — so the
+        # rebuild happens after tests, immediately before packaging.
         run: npm test
+
+      - name: Rebuild native modules for Electron
+        run: npm run rebuild
 
       - name: Package for Windows (portable zip + NSIS installer)
         # Repo config is zip-only (nsis needs Wine on Linux). On a real Windows
