@@ -63,6 +63,8 @@ import * as customers from '../database/customers.js';
 import * as products from '../database/products.js';
 import * as orders from '../database/orders.js';
 import * as fulfillment from '../database/fulfillment.js';
+import * as production from '../database/production.js';
+import * as returns from '../database/returns.js';
 import { saveProductImage } from './images.js';
 
 function ok<T>(data: T) {
@@ -281,6 +283,7 @@ const ALLOWED_SETTINGS = new Set([
   'default_currency',
   'sample_data_enabled',
   'last_page',
+  'stagepoint_inbox_dir',
 ]);
 
 export function registerIpc(): void {
@@ -506,4 +509,90 @@ export function registerIpc(): void {
     fulfillment.deleteFulfillment(reqId(fulfillmentId));
     return null;
   });
+
+  // ----- production handoff (StagePoint contract) -----
+  handle(IPC.handoffsCreate, (orderId: unknown, payload: unknown) => {
+    const o = (payload ?? {}) as Record<string, unknown>;
+    const rawItems = o.items;
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
+      throw new AppError('VALIDATION', 'Select at least one line item for production.');
+    }
+    const items = rawItems.map((r) => {
+      const it = (r ?? {}) as Record<string, unknown>;
+      return { order_item_id: reqId(it.order_item_id, 'order item'), quantity: reqInt(it.quantity, 'quantity', 1, 1000000) };
+    });
+    return production.createHandoff(reqId(orderId, 'order'), items, Boolean(o.move_order));
+  });
+  handle(IPC.handoffsSend, (id: unknown) => production.sendHandoff(reqId(id)));
+  handle(IPC.handoffsList, (orderId: unknown) =>
+    production.listHandoffs(optId(orderId, 'order') ?? undefined),
+  );
+  handle(IPC.handoffsGet, (id: unknown) => production.getHandoff(reqId(id)));
+  handle(IPC.handoffsUpdateStatus, (id: unknown, to: unknown, note: unknown) =>
+    production.updateHandoffStatus(
+      reqId(id),
+      reqEnum(to, 'status', ['draft', 'sent', 'accepted', 'in_progress', 'completed', 'failed'] as const),
+      optString(note, 'note', 1000),
+    ),
+  );
+  handle(IPC.handoffsDelete, (id: unknown) => {
+    production.deleteHandoff(reqId(id));
+    return null;
+  });
+  handle(IPC.handoffsCheckAcks, () => production.checkForAcks());
+  handle(IPC.stagepointDetect, () => production.detectStagepoint());
+  handle(IPC.stagepointPickInbox, async () => {
+    const win = BrowserWindow.getFocusedWindow();
+    const res = await dialog.showOpenDialog(win!, {
+      title: 'Choose the StagePoint handoff inbox folder',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (res.canceled || res.filePaths.length === 0) return getSetting('stagepoint_inbox_dir');
+    setSetting('stagepoint_inbox_dir', res.filePaths[0]);
+    return res.filePaths[0];
+  });
+
+  // ----- returns -----
+  handle(IPC.returnsList, (filters: unknown) => {
+    const o = (filters ?? {}) as Record<string, unknown>;
+    return returns.listReturns({
+      status: o.status === undefined ? undefined : reqEnum(o.status, 'status', ['requested', 'approved', 'awaiting_return', 'received', 'inspected', 'resolved', 'rejected'] as const),
+      search: optString(o.search, 'search', 200) ?? undefined,
+    });
+  });
+  handle(IPC.returnsGet, (id: unknown) => returns.getReturn(reqId(id)));
+  handle(IPC.returnsCreate, (orderId: unknown, payload: unknown) => {
+    const o = (payload ?? {}) as Record<string, unknown>;
+    const rawItems = o.items;
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
+      throw new AppError('VALIDATION', 'A return must include at least one item.');
+    }
+    return returns.createReturn(reqId(orderId, 'order'), {
+      reason: optString(o.reason, 'reason', 1000),
+      internal_notes: optString(o.internal_notes, 'internal notes', 4000),
+      items: rawItems.map((r) => {
+        const it = (r ?? {}) as Record<string, unknown>;
+        return {
+          order_item_id: reqId(it.order_item_id, 'order item'),
+          quantity: reqInt(it.quantity, 'quantity', 1, 1000000),
+          reason: optString(it.reason, 'item reason', 500),
+        };
+      }),
+    });
+  });
+  handle(IPC.returnsUpdate, (id: unknown, payload: unknown) => {
+    const o = (payload ?? {}) as Record<string, unknown>;
+    return returns.updateReturn(reqId(id), {
+      reason: o.reason === undefined ? undefined : optString(o.reason, 'reason', 1000),
+      refund_status: o.refund_status === undefined ? undefined : optString(o.refund_status, 'refund status', 200),
+      internal_notes: o.internal_notes === undefined ? undefined : optString(o.internal_notes, 'internal notes', 4000),
+      replacement_order_id: o.replacement_order_id === undefined ? undefined : optId(o.replacement_order_id, 'replacement order'),
+    });
+  });
+  handle(IPC.returnsSetStatus, (id: unknown, to: unknown) =>
+    returns.updateReturnStatus(
+      reqId(id),
+      reqEnum(to, 'status', ['requested', 'approved', 'awaiting_return', 'received', 'inspected', 'resolved', 'rejected'] as const),
+    ),
+  );
 }

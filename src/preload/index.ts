@@ -22,11 +22,15 @@ import type {
   OrderStatusEvent,
   PackItemInput,
   Payment,
+  ProductionHandoff,
   Product,
   ProductCategory,
   ProductVariant,
   ReadyToShipInput,
+  ReturnRecord,
+  ReturnStatus,
   ShipInput,
+  StagepointDetection,
   UpdateCustomerInput,
   UpdateOrderInput,
   UpdateProductInput,
@@ -126,6 +130,30 @@ const api = {
   shipFulfillment: (fulfillmentId: string, input: ShipInput) =>
     invoke<FulfillmentDetail>(IPC.fulfillmentsShip, fulfillmentId, input),
   deleteFulfillment: (fulfillmentId: string) => invoke<null>(IPC.fulfillmentsDelete, fulfillmentId),
+
+  // production handoff
+  createHandoff: (orderId: string, payload: { items: { order_item_id: string; quantity: number }[]; move_order: boolean }) =>
+    invoke<ProductionHandoff>(IPC.handoffsCreate, orderId, payload),
+  sendHandoff: (id: string) => invoke<ProductionHandoff>(IPC.handoffsSend, id),
+  listHandoffs: (orderId?: string) =>
+    invoke<(ProductionHandoff & { order_number: string })[]>(IPC.handoffsList, orderId),
+  getHandoff: (id: string) => invoke<ProductionHandoff>(IPC.handoffsGet, id),
+  updateHandoffStatus: (id: string, to: ProductionHandoff['status'], note?: string) =>
+    invoke<ProductionHandoff>(IPC.handoffsUpdateStatus, id, to, note),
+  deleteHandoff: (id: string) => invoke<null>(IPC.handoffsDelete, id),
+  checkHandoffAcks: () => invoke<{ applied: number; errors: string[] }>(IPC.handoffsCheckAcks),
+  detectStagepoint: () => invoke<StagepointDetection>(IPC.stagepointDetect),
+  pickStagepointInbox: () => invoke<string | null>(IPC.stagepointPickInbox),
+
+  // returns
+  listReturns: (filters?: { status?: ReturnStatus; search?: string }) =>
+    invoke<(ReturnRecord & { order_number: string; customer_name: string | null })[]>(IPC.returnsList, filters ?? {}),
+  getReturn: (id: string) => invoke<ReturnRecord>(IPC.returnsGet, id),
+  createReturn: (orderId: string, payload: { reason?: string | null; internal_notes?: string | null; items: { order_item_id: string; quantity: number; reason?: string | null }[] }) =>
+    invoke<ReturnRecord>(IPC.returnsCreate, orderId, payload),
+  updateReturn: (id: string, patch: { reason?: string | null; refund_status?: string | null; internal_notes?: string | null; replacement_order_id?: string | null }) =>
+    invoke<ReturnRecord>(IPC.returnsUpdate, id, patch),
+  setReturnStatus: (id: string, to: ReturnStatus) => invoke<ReturnRecord>(IPC.returnsSetStatus, id, to),
 };
 
 export type OrderlyApi = typeof api;

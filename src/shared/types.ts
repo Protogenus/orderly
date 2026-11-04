@@ -253,7 +253,7 @@ export interface ReturnRecord {
   internal_notes: string | null;
   created_at: string;
   updated_at: string;
-  items: ReturnItem[];
+  items: ReturnItemDetail[];
 }
 
 export interface ReturnItem {
@@ -262,6 +262,12 @@ export interface ReturnItem {
   order_item_id: ID;
   quantity: number;
   reason: string | null;
+}
+
+export interface ReturnItemDetail extends ReturnItem {
+  description: string;
+  sku: string | null;
+  quantity_ordered: number;
 }
 
 export interface ImportJob {
@@ -486,4 +492,11 @@ export interface WorkspaceData {
   ready_to_ship: FulfillmentDetail[];
   shipped: FulfillmentDetail[];
   awaiting_delivery: FulfillmentDetail[];
+}
+
+export interface StagepointDetection {
+  connected: boolean;
+  inbox_dir: string | null;
+  outbox_dir: string;
+  message: string;
 }

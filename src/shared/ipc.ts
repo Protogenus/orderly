@@ -60,14 +60,20 @@ export const IPC = {
 
   // Milestone 4+
   handoffsCreate: 'handoffs:create',
+  handoffsSend: 'handoffs:send',
   handoffsList: 'handoffs:list',
+  handoffsGet: 'handoffs:get',
   handoffsUpdateStatus: 'handoffs:update-status',
+  handoffsDelete: 'handoffs:delete',
+  handoffsCheckAcks: 'handoffs:check-acks',
   stagepointDetect: 'stagepoint:detect',
+  stagepointPickInbox: 'stagepoint:pick-inbox',
 
   returnsList: 'returns:list',
   returnsGet: 'returns:get',
   returnsCreate: 'returns:create',
   returnsUpdate: 'returns:update',
+  returnsSetStatus: 'returns:set-status',
 
   // Milestone 5+
   dashboardStats: 'dashboard:stats',

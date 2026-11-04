@@ -12,6 +12,7 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
+  const [inboxDir, setInboxDir] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -21,6 +22,7 @@ export function SettingsPage() {
         setCompany(s.company_name ?? '');
         setPrefix(s.order_number_prefix ?? 'ORD-');
         setCurrency(s.default_currency ?? 'USD');
+        setInboxDir(s.stagepoint_inbox_dir ?? '');
       } catch (e) {
         notifyError(errMsg(e));
       }
@@ -122,6 +124,36 @@ export function SettingsPage() {
           <button className="btn btn-primary" onClick={save} disabled={saving}>
             {saving ? 'Saving…' : 'Save settings'}
           </button>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Production — StagePoint</h3>
+        <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 0 }}>
+          Point Orderly at StagePoint's handoff inbox folder to deliver production envelopes directly.
+          Leave it empty and Orderly honestly reports "not connected", saving envelopes to its own outbox.
+        </p>
+        <dl className="kv">
+          <dt>Inbox folder</dt>
+          <dd className="mono" style={{ wordBreak: 'break-all' }}>{inboxDir || '— not set —'}</dd>
+        </dl>
+        <div className="btn-row" style={{ marginTop: 8 }}>
+          <button className="btn" onClick={async () => {
+            try {
+              const d = await window.orderly.pickStagepointInbox();
+              setInboxDir(d ?? '');
+              notify('StagePoint inbox updated.');
+            } catch (e) { notifyError(errMsg(e)); }
+          }}>Choose folder…</button>
+          {inboxDir && (
+            <button className="btn" onClick={async () => {
+              try {
+                await setSetting('stagepoint_inbox_dir', '');
+                setInboxDir('');
+                notify('StagePoint inbox cleared.');
+              } catch (e) { notifyError(errMsg(e)); }
+            }}>Clear</button>
+          )}
         </div>
       </div>
 
