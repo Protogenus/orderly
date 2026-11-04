@@ -14,7 +14,7 @@ BACKUPS
   and Settings > Restore to bring one back.
 
 SUPPORT FILES
-  win-unpacked/  - the application itself (do not move files out of it)
+  Orderly.exe + resources/  - the application itself (do not move files)
   START_ORDERLY.bat - launcher (this file's folder is the install location)
 
 (c) Clever Signal. Offline-first. No cloud, no AI, no paid services.
